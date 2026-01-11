@@ -1,0 +1,47 @@
+//
+export type TypeOfBiddingItem = {
+    // id 
+    id: string;
+    // 代码
+    code: string;
+    // 名称
+    name: string;
+    // 异动类型
+    type: string;
+    // 异动说明
+    desc: string;
+    // 竞价评级
+    bidding_rate: string;
+    // 匹配价
+    match_price: number;
+    // 竞价涨幅
+    bidding_amount_of_increase: number;
+    // 竞价量
+    bidding_quantity: number;
+    // 竞价金额
+    bidding_money: number;
+    // 未匹配量
+    unmatch_quantity: number;
+    // 未匹配金额
+    unmatch_money: number;
+    // 昨日成交量
+    yesterday_quantity: number;
+    // 昨日换手
+    yesterday_change_hands: number;
+    // 换手
+    change_hands: number;
+    // 昨收
+    yesterday_close_pirce: number;
+    // 现价
+    current_price: number;
+    // 涨幅
+    amount_of_increase: number;
+    // 总手
+    total_volume: number;
+    // 金额
+    money: number;
+    // 量比
+    quantity_relative_ratio: number;
+    // 创建时间
+    create_time: string;
+}
