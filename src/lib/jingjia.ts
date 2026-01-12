@@ -1,8 +1,8 @@
 import clientPromise from "@/lib/mongodb";
 import type { TypeOfBiddingItem } from "@/types";
+import { COLLECTIONS, DB_NAME_DEFAULT } from "@/shared/contants";
 
-const dbName = process.env.MONGODB_DB || "chaogu";
-const collectionName = "jingjia";
+const dbName = process.env.MONGODB_DB || DB_NAME_DEFAULT;
 
 export type JingjiaMeta = {
   sourceFileName: string;
@@ -16,7 +16,8 @@ export type JingjiaRow = TypeOfBiddingItem & {
 
 export async function insertJingjiaRows(
   rows: JingjiaRow[],
-  meta: JingjiaMeta
+  meta: JingjiaMeta,
+  collectionName: string = COLLECTIONS.JINGJIA
 ) {
   if (!rows.length) {
     return { insertedCount: 0 };

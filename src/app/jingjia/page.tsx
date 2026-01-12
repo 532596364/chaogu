@@ -1,11 +1,28 @@
 "use client";
 
-import { Alert, Button, Card, DatePicker, Space, Typography, Upload } from "antd";
+import {
+  Alert,
+  Button,
+  Card,
+  DatePicker,
+  Select,
+  Space,
+  Typography,
+  Upload,
+} from "antd";
 import type { UploadFile } from "antd";
 import dayjs from "dayjs";
 import { useState, type FormEvent } from "react";
+import {
+  COLLECTIONS,
+  COLLECTION_OPTIONS,
+  CREATE_TIME_SUFFIX,
+  DATE_FORMAT,
+  DB_NAME_DEFAULT,
+} from "@/shared/contants";
 
 type UploadState = "idle" | "uploading" | "done" | "error";
+type CollectionName = (typeof COLLECTION_OPTIONS)[number]["value"];
 
 export default function JingjiaUploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -13,6 +30,9 @@ export default function JingjiaUploadPage() {
   const [state, setState] = useState<UploadState>("idle");
   const [message, setMessage] = useState("");
   const [createDate, setCreateDate] = useState(() => getLocalDate());
+  const [collection, setCollection] = useState<CollectionName>(
+    COLLECTIONS.JINGJIA
+  );
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -30,6 +50,7 @@ export default function JingjiaUploadPage() {
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("create_date", createDate);
+      formData.append("collection", collection);
 
       const response = await fetch("/api/jingjia", {
         method: "POST",
@@ -59,29 +80,38 @@ export default function JingjiaUploadPage() {
         <Card
           className="overflow-hidden rounded-3xl border-zinc-200 shadow-lg"
         >
-          <Space direction="vertical" size={20} className="w-full">
+          <Space vertical={true} size={20} className="w-full">
             <div>
               <Typography.Title level={3} className="!mb-1">
                 竞价数据导入
               </Typography.Title>
               <Typography.Text type="secondary">
                 上传 Excel 文件后，将写入数据库{" "}
-                <Typography.Text strong>chaogu</Typography.Text> 的{" "}
-                <Typography.Text strong>jingjia</Typography.Text> 集合。
+                <Typography.Text strong>{DB_NAME_DEFAULT}</Typography.Text> 的{" "}
+                <Typography.Text strong>{collection}</Typography.Text> 集合。
               </Typography.Text>
             </div>
 
             <form onSubmit={onSubmit}>
-              <Space direction="vertical" size={16} className="w-full">
+              <Space vertical={true} size={16} className="w-full">
+                <div>
+                  <Typography.Text strong>选择数据表</Typography.Text>
+                  <Select<CollectionName>
+                    className="mt-2 w-full"
+                    options={COLLECTION_OPTIONS}
+                    value={collection}
+                    onChange={(value) => setCollection(value)}
+                  />
+                </div>
                 <div>
                   <Typography.Text strong>
-                    选择日期（时间固定为 12:00:00）
+                    选择日期（时间固定为 {CREATE_TIME_SUFFIX}）
                   </Typography.Text>
                   <DatePicker
                     allowClear
-                    value={createDate ? dayjs(createDate, "YYYY-MM-DD") : null}
+                    value={createDate ? dayjs(createDate, DATE_FORMAT) : null}
                     onChange={(value) =>
-                      setCreateDate(value ? value.format("YYYY-MM-DD") : "")
+                      setCreateDate(value ? value.format(DATE_FORMAT) : "")
                     }
                     className="mt-2 w-full"
                   />

@@ -3,6 +3,11 @@ import * as XLSX from "xlsx";
 import "xlsx/dist/cpexcel.full";
 import iconv from "iconv-lite";
 import { insertJingjiaRows } from "@/lib/jingjia";
+import {
+  ALLOWED_COLLECTIONS,
+  COLLECTIONS,
+  CREATE_TIME_SUFFIX,
+} from "@/shared/contants";
 import type { TypeOfBiddingItem } from "@/types";
 
 export const runtime = "nodejs";
@@ -43,6 +48,18 @@ export async function POST(request: Request) {
     const createDateInput = formData.get("create_date");
     const createDate =
       typeof createDateInput === "string" ? createDateInput.trim() : "";
+    const collectionInput = formData.get("collection");
+    const collectionName =
+      typeof collectionInput === "string" && collectionInput.trim()
+        ? collectionInput.trim()
+        : COLLECTIONS.JINGJIA;
+
+    if (!ALLOWED_COLLECTIONS.has(collectionName)) {
+      return NextResponse.json(
+        { error: "Invalid collection name." },
+        { status: 400 }
+      );
+    }
     const mappedRows = mapRowsToBiddingItems(normalizedRows, createDate);
 
     if (!mappedRows.length) {
@@ -52,11 +69,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await insertJingjiaRows(mappedRows, {
-      sourceFileName: file.name,
-      sheetName,
-      uploadedAt: new Date(),
-    });
+    const result = await insertJingjiaRows(
+      mappedRows,
+      {
+        sourceFileName: file.name,
+        sheetName,
+        uploadedAt: new Date(),
+      },
+      collectionName
+    );
 
     return NextResponse.json({
       insertedCount: result.insertedCount,
@@ -217,7 +238,7 @@ function mapRowToBiddingItem(
   }
 
   if (createDate) {
-    item.create_time = `${createDate} 12:00:00`;
+    item.create_time = `${createDate} ${CREATE_TIME_SUFFIX}`;
     item.create_date = createDate;
   }
 

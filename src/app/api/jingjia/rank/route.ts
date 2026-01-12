@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import type { Collection, Document } from "mongodb";
 import clientPromise from "@/lib/mongodb";
+import { COLLECTIONS, DB_NAME_DEFAULT } from "@/shared/contants";
 
 export const runtime = "nodejs";
 
-const dbName = process.env.MONGODB_DB || "chaogu";
-const collectionName = "jingjia";
+const dbName = process.env.MONGODB_DB || DB_NAME_DEFAULT;
+const collectionName = COLLECTIONS.JINGJIA;
 
 type RankItem = {
   code: string;

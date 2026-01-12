@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Checkbox, DatePicker, Modal, Table, Select } from "antd";
-import { CopyOutlined } from "@ant-design/icons";
+import { CopyOutlined, DownloadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 
@@ -183,6 +183,77 @@ export default function JingjiaRankPage() {
     }
   };
 
+  const downloadExclusiveCounts = async (days: number) => {
+    if (!queryKey.date) {
+      return;
+    }
+    const nextDays = days + 1;
+    try {
+      const baseUrl = new URL("/api/jingjia/rank", window.location.origin);
+      baseUrl.searchParams.set("date", queryKey.date);
+      baseUrl.searchParams.set("limit", "0");
+      if (queryKey.type && queryKey.type !== "全部") {
+        baseUrl.searchParams.set("type", queryKey.type);
+      }
+      if (queryKey.exclude) {
+        baseUrl.searchParams.set("exclude", "1");
+      }
+
+      const currentUrl = new URL(baseUrl.toString());
+      currentUrl.searchParams.set("days", String(days));
+      const nextUrl = new URL(baseUrl.toString());
+      nextUrl.searchParams.set("days", String(nextDays));
+
+      const [currentRes, nextRes] = await Promise.all([
+        fetch(currentUrl.toString()),
+        fetch(nextUrl.toString()),
+      ]);
+      const currentData = await currentRes.json();
+      const nextData = await nextRes.json();
+
+      if (!currentRes.ok || !nextRes.ok) {
+        throw new Error("下载失败");
+      }
+
+      const currentItems = Array.isArray(currentData.buckets)
+        ? currentData.buckets[0]?.items || []
+        : [];
+      const nextItems = Array.isArray(nextData.buckets)
+        ? nextData.buckets[0]?.items || []
+        : [];
+
+      const nextSet = new Set(
+        nextItems
+          .filter((item: RankItem) => item.count === nextDays)
+          .map((item: RankItem) => item.code)
+      );
+
+      const codes = currentItems
+        .filter(
+          (item: RankItem) =>
+            item.count === days && item.code && !nextSet.has(item.code)
+        )
+        .map((item: RankItem) => item.code);
+
+      if (!codes.length) {
+        return;
+      }
+
+      const content = codes.join("\r\n");
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `${days}${days}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      return;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 px-6 py-12">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -259,14 +330,24 @@ export default function JingjiaRankPage() {
                 <h2 className="text-sm font-semibold text-zinc-900">
                   {bucket.days}天抢筹排行榜
                 </h2>
-                {bucket.days === 1 || bucket.days === 2 ? (
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<CopyOutlined />}
-                    onClick={() => downloadCodes(bucket)}
-                  />
-                ) : null}
+                <div className="flex items-center gap-1">
+                  {bucket.days === 1 || bucket.days === 2 ? (
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<CopyOutlined />}
+                      onClick={() => downloadCodes(bucket)}
+                    />
+                  ) : null}
+                  {bucket.days === 2 || bucket.days === 3 ? (
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<DownloadOutlined />}
+                      onClick={() => downloadExclusiveCounts(bucket.days)}
+                    />
+                  ) : null}
+                </div>
               </div>
               <ol className="mt-4 divide-y divide-zinc-100 text-sm text-zinc-800">
                 {bucket.items.length ? (
