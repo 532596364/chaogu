@@ -16,7 +16,10 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "xlsx": "^0.18.5",
-    "antd": "^6.1.4"
+    "antd": "^6.1.4",
+    "@ant-design/charts": "^2.6.7",
+    "@ant-design/plots": "^2.6.8",
+    "apexcharts": "^5.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

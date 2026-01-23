@@ -45,3 +45,26 @@ export type TypeOfBiddingItem = {
     // 创建时间
     create_time: string;
 }
+
+export type TypeTemperature = {   
+    // 5天连续抢筹的数量
+    nums_of_5_days: number;
+    // 4天连续抢筹的数量
+    nums_of_4_days: number;
+    // 3天连续抢筹的数量
+    nums_of_3_days: number;
+    // 2天连续抢筹的数量
+    nums_of_2_days: number;
+    // 1天连续抢筹的数量
+    nums_of_1_days: number;
+    // 当天触发竞价抢筹的数量
+    nums_of_jingjia: number;
+    // 当天竞价中，涨停的数量
+    nums_of_up_stop: number;
+    // 情绪温度
+    emotional_temperature: number;
+    // 猜测温度
+    guess_temperature: number;
+    // 创建日期
+    create_date: string;
+}
