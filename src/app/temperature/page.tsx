@@ -4,7 +4,6 @@ import {
   Alert,
   Button,
   Card,
-  Checkbox,
   DatePicker,
   Drawer,
   Form,
@@ -15,7 +14,6 @@ import {
   Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { Line } from "@ant-design/charts";
 import dayjs from "dayjs";
 import { useMemo, useState } from "react";
 import { DATE_FORMAT } from "@/shared/contants";
@@ -33,29 +31,6 @@ export default function TemperaturePage() {
   const [editing, setEditing] = useState<TypeTemperature | null>(null);
   const [form] = Form.useForm<TypeTemperature>();
   const [saving, setSaving] = useState(false);
-  const [selectedSeries, setSelectedSeries] = useState<string[]>([]);
-
-  const seriesOptions = useMemo(
-    () => [
-      { key: "nums_of_1_days", label: "抢筹1天" },
-      { key: "nums_of_2_days", label: "抢筹2天" },
-      { key: "nums_of_3_days", label: "抢筹3天" },
-      { key: "nums_of_4_days", label: "抢筹4天" },
-      { key: "nums_of_5_days", label: "抢筹5天" },
-      { key: "nums_of_jingjia", label: "竞价数" },
-      { key: "nums_of_up_stop", label: "涨停数" },
-      { key: "emotional_temperature", label: "情绪温度" },
-      { key: "guess_temperature", label: "猜测温度" },
-    ],
-    []
-  );
-
-  const selectedSet = useMemo(() => {
-    if (!selectedSeries.length) {
-      return new Set(seriesOptions.map((item) => item.key));
-    }
-    return new Set(selectedSeries);
-  }, [selectedSeries, seriesOptions]);
 
   const updateData = async () => {
     if (!date) {
@@ -76,6 +51,25 @@ export default function TemperaturePage() {
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data?.error || "更新失败");
+      }
+
+      const counts = data?.counts;
+      if (counts && typeof counts === "object") {
+        setList((prev) =>
+          prev.map((item) => {
+            if (item.create_date !== date) {
+              return item;
+            }
+            const merged = { ...item, ...counts };
+            return {
+              ...merged,
+              guess_temperature: calcGuessTemperature(
+                merged.nums_of_up_stop,
+                merged.nums_of_jingjia
+              ),
+            };
+          })
+        );
       }
 
       setState("updated");
@@ -164,38 +158,6 @@ export default function TemperaturePage() {
     []
   );
 
-  const chartData = useMemo(() => {
-    const sorted = [...list].sort((a, b) =>
-      a.create_date.localeCompare(b.create_date)
-    );
-    return sorted.flatMap((item) =>
-      seriesOptions
-        .filter((s) => selectedSet.has(s.key))
-        .map((s) => ({
-          date: item.create_date,
-          type: s.label,
-          value: Number(item[s.key as keyof TypeTemperature]) || 0,
-        }))
-    );
-  }, [list, seriesOptions, selectedSet]);
-
-  const chartConfig = useMemo(
-    () => ({
-      data: chartData,
-      xField: "date",
-      yField: "value",
-      seriesField: "type",
-      height: 320,
-      autoFit: true,
-      legend: { position: "top" },
-      smooth: true,
-      tooltip: { showMarkers: false },
-      xAxis: { title: { text: "日期" } },
-      yAxis: { title: { text: "数值" } },
-    }),
-    [chartData]
-  );
-
   const deleteRow = (record: TypeTemperature) => {
     Modal.confirm({
       title: "确认删除",
@@ -239,16 +201,29 @@ export default function TemperaturePage() {
     }
     setSaving(true);
     try {
+      const mergedValues = { ...editing, ...values };
+      const guess_temperature = calcGuessTemperature(
+        mergedValues.nums_of_up_stop,
+        mergedValues.nums_of_jingjia
+      );
       const response = await fetch("/api/temperature", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ create_date: editing.create_date, ...values }),
+        body: JSON.stringify({
+          create_date: editing.create_date,
+          ...values,
+          guess_temperature,
+        }),
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data?.error || "保存失败");
       }
-      const updated = data?.item ?? { ...editing, ...values };
+      const updated = data?.item ?? {
+        ...editing,
+        ...values,
+        guess_temperature,
+      };
       setList((prev) =>
         prev.map((item) =>
           item.create_date === editing.create_date ? updated : item
@@ -313,29 +288,6 @@ export default function TemperaturePage() {
                 message={message}
               />
             ) : null}
-            <div className="w-full">
-              <Typography.Text strong>图例筛选</Typography.Text>
-              <Checkbox.Group
-                className="mt-2 flex flex-wrap gap-3"
-                options={seriesOptions.map((item) => ({
-                  label: item.label,
-                  value: item.key,
-                }))}
-                value={selectedSeries.length ? selectedSeries : undefined}
-                onChange={(values) =>
-                  setSelectedSeries(values.map((value) => String(value)))
-                }
-              />
-            </div>
-            <div className="w-full">
-              {chartData.length ? (
-                <Line {...chartConfig} />
-              ) : (
-                <div className="rounded-lg border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-500">
-                  暂无图表数据
-                </div>
-              )}
-            </div>
             <Table<TypeTemperature>
               rowKey={(record) => record.create_date}
               columns={columns}
@@ -378,4 +330,17 @@ function getLocalDate() {
   const offsetMs = now.getTimezoneOffset() * 60 * 1000;
   const local = new Date(now.getTime() - offsetMs);
   return local.toISOString().slice(0, 10);
+}
+
+function calcGuessTemperature(
+  numsOfUpStop?: number | null,
+  numsOfJingjia?: number | null
+) {
+  const upStop = typeof numsOfUpStop === "number" ? numsOfUpStop : Number.NaN;
+  const jingjia =
+    typeof numsOfJingjia === "number" ? numsOfJingjia : Number.NaN;
+  if (!Number.isFinite(upStop) || !Number.isFinite(jingjia) || jingjia <= 0) {
+    return 0;
+  }
+  return Math.round((upStop * 1000) / jingjia);
 }

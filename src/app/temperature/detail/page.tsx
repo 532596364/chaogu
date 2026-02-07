@@ -1,5 +1,4 @@
 "use client";
-
 import { Card, Space, Typography } from "antd";
 import ApexCharts from "apexcharts";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -11,7 +10,34 @@ type ChartPoint = {
   value: number;
 };
 
-const CHART_COLORS =  ['#2E93fA', '#66DA26', '#546E7A', '#E91E63', '#FF9800'];
+const CHART_COLORS =  ['#FF9800', '#546E7A', '#66DA26','#2E93fA' , '#E91E63' , '#E91E63', ];
+
+function buildChart(
+  list: TypeTemperature[],
+  series: Array<[keyof TypeTemperature, string]>
+) {
+  const points: ChartPoint[] = [];
+  for (const item of list) {
+    for (const [key, label] of series) {
+      points.push({
+        date: item.create_date,
+        type: label,
+        value: Number(item[key]) || 0,
+      });
+    }
+  }
+  return points;
+}
+
+function buildSeries(points: ChartPoint[]) {
+  const seriesMap = new Map<string, { x: string; y: number }[]>();
+  for (const point of points) {
+    const items = seriesMap.get(point.type) ?? [];
+    items.push({ x: point.date, y: point.value });
+    seriesMap.set(point.type, items);
+  }
+  return Array.from(seriesMap.entries()).map(([name, data]) => ({ name, data }));
+}
 
 export default function TemperatureDetailPage() {
   const [list, setList] = useState<TypeTemperature[]>([]);
@@ -206,7 +232,10 @@ export default function TemperatureDetailPage() {
               {error}
             </div>
           ) : null}
-
+          <Card loading={loading} className="rounded-2xl">
+            <Typography.Text strong>涨停数*100/竞价数 + 情绪温度</Typography.Text>
+            <div className="mt-3" ref={chart3Ref} />
+          </Card>
           <Card loading={loading} className="rounded-2xl">
             <Typography.Text strong>抢筹1天 + 情绪温度</Typography.Text>
             <div className="mt-3" ref={chart1Ref} />
@@ -216,12 +245,6 @@ export default function TemperatureDetailPage() {
             <Typography.Text strong>抢筹2天 + 情绪温度</Typography.Text>
             <div className="mt-3" ref={chart2Ref} />
           </Card>
-
-          <Card loading={loading} className="rounded-2xl">
-            <Typography.Text strong>涨停数*100/竞价数 + 情绪温度</Typography.Text>
-            <div className="mt-3" ref={chart3Ref} />
-          </Card>
-
           <Card loading={loading} className="rounded-2xl">
             <Typography.Text strong>抢筹3天 + 情绪温度</Typography.Text>
             <div className="mt-3" ref={chart4Ref} />
@@ -230,31 +253,4 @@ export default function TemperatureDetailPage() {
       </div>
     </div>
   );
-}
-
-function buildChart(
-  list: TypeTemperature[],
-  series: Array<[keyof TypeTemperature, string]>
-) {
-  const points: ChartPoint[] = [];
-  for (const item of list) {
-    for (const [key, label] of series) {
-      points.push({
-        date: item.create_date,
-        type: label,
-        value: Number(item[key]) || 0,
-      });
-    }
-  }
-  return points;
-}
-
-function buildSeries(points: ChartPoint[]) {
-  const seriesMap = new Map<string, { x: string; y: number }[]>();
-  for (const point of points) {
-    const items = seriesMap.get(point.type) ?? [];
-    items.push({ x: point.date, y: point.value });
-    seriesMap.set(point.type, items);
-  }
-  return Array.from(seriesMap.entries()).map(([name, data]) => ({ name, data }));
 }
