@@ -117,6 +117,7 @@ export default function TemperaturePage() {
     { title: "抢筹5天", dataIndex: "nums_of_5_days" },
     { title: "竞价数", dataIndex: "nums_of_jingjia" },
     { title: "涨停数", dataIndex: "nums_of_up_stop" },
+    { title: "连扳高度", dataIndex: "stop_height" },
     { title: "情绪温度", dataIndex: "emotional_temperature" },
     { title: "猜测温度", dataIndex: "guess_temperature" },
     {
@@ -152,6 +153,7 @@ export default function TemperaturePage() {
       { label: "抢筹5天", name: "nums_of_5_days" },
       { label: "竞价数", name: "nums_of_jingjia" },
       { label: "涨停数", name: "nums_of_up_stop" },
+      { label: "连扳高度", name: "stop_height" },
       { label: "情绪温度", name: "emotional_temperature" },
       { label: "猜测温度", name: "guess_temperature" },
     ],

@@ -1,7 +1,9 @@
 "use client";
-import { Card, Space, Typography } from "antd";
+import { Button, Card, DatePicker, Space, Typography } from "antd";
 import ApexCharts from "apexcharts";
+import dayjs from "dayjs";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { DATE_FORMAT } from "@/shared/contants";
 import type { TypeTemperature } from "@/types";
 
 type ChartPoint = {
@@ -43,25 +45,31 @@ export default function TemperatureDetailPage() {
   const [list, setList] = useState<TypeTemperature[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [queryDate, setQueryDate] = useState(() => getLocalDate());
+
+  const load = async (fromDate?: string) => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/temperature");
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || "查询失败");
+      }
+      const items = Array.isArray(data?.list) ? data.list : [];
+      if (fromDate) {
+        setList(items.filter((item) => item.create_date >= fromDate));
+        return;
+      }
+      setList(items);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "查询失败");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const response = await fetch("/api/temperature");
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data?.error || "查询失败");
-        }
-        setList(Array.isArray(data?.list) ? data.list : []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "查询失败");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     load();
   }, []);
 
@@ -164,15 +172,25 @@ export default function TemperatureDetailPage() {
     );
   }, [sorted]);
 
+  const chart5 = useMemo(
+    () =>
+      buildChart(sorted, [
+        ["stop_height", "连板高度"],
+      ]),
+    [sorted]
+  );
+
   const chart1Ref = useRef<HTMLDivElement | null>(null);
   const chart2Ref = useRef<HTMLDivElement | null>(null);
   const chart3Ref = useRef<HTMLDivElement | null>(null);
   const chart4Ref = useRef<HTMLDivElement | null>(null);
+  const chart5Ref = useRef<HTMLDivElement | null>(null);
 
   const chart1Series = useMemo(() => buildSeries(chart1), [chart1]);
   const chart2Series = useMemo(() => buildSeries(chart2), [chart2]);
   const chart3Series = useMemo(() => buildSeries(chart3), [chart3]);
   const chart4Series = useMemo(() => buildSeries(chart4), [chart4]);
+  const chart5Series = useMemo(() => buildSeries(chart5), [chart5]);
 
   useEffect(() => {
     const instances: ApexCharts[] = [];
@@ -208,11 +226,19 @@ export default function TemperatureDetailPage() {
       chart.render();
       instances.push(chart);
     }
+    if (chart5Ref.current) {
+      const chart = new ApexCharts(chart5Ref.current, {
+        ...chartOptions,
+        series: chart5Series,
+      });
+      chart.render();
+      instances.push(chart);
+    }
 
     return () => {
       instances.forEach((chart) => chart.destroy());
     };
-  }, [chartOptions, chart1Series, chart2Series, chart3Series, chart4Series]);
+  }, [chartOptions, chart1Series, chart2Series, chart3Series, chart4Series, chart5Series]);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#f8fafc,_#e4e7ec)] px-6 py-16">
@@ -226,6 +252,28 @@ export default function TemperatureDetailPage() {
               基于 jingjia_tongji 的抢筹与情绪温度面积图。
             </Typography.Text>
           </div>
+          <Space size={12} wrap>
+            <DatePicker
+              allowClear
+              value={queryDate ? dayjs(queryDate, DATE_FORMAT) : null}
+              onChange={(value) =>
+                setQueryDate(value ? value.format(DATE_FORMAT) : "")
+              }
+            />
+            <Button
+              type="primary"
+              loading={loading}
+              onClick={() => {
+                if (!queryDate) {
+                  setError("请先选择日期。");
+                  return;
+                }
+                load(queryDate);
+              }}
+            >
+              查询
+            </Button>
+          </Space>
 
           {error ? (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
@@ -249,8 +297,19 @@ export default function TemperatureDetailPage() {
             <Typography.Text strong>抢筹3天 + 情绪温度</Typography.Text>
             <div className="mt-3" ref={chart4Ref} />
           </Card>
+          <Card loading={loading} className="rounded-2xl">
+            <Typography.Text strong>连板高度</Typography.Text>
+            <div className="mt-3" ref={chart5Ref} />
+          </Card>
         </Space>
       </div>
     </div>
   );
+}
+
+function getLocalDate() {
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+  const local = new Date(now.getTime() - offsetMs);
+  return local.toISOString().slice(0, 10);
 }

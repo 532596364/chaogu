@@ -118,6 +118,7 @@ function sanitizeUpdate(body: Record<string, unknown>) {
     "nums_of_5_days",
     "nums_of_jingjia",
     "nums_of_up_stop",
+    "stop_height",
     "emotional_temperature",
     "guess_temperature",
   ];

@@ -19,6 +19,7 @@ export async function GET(request: Request) {
   const date = (searchParams.get("date") || "").trim();
   const type = (searchParams.get("type") || "").trim();
   const exclude = (searchParams.get("exclude") || "").trim() === "1";
+  const includeSpecial = (searchParams.get("includeSpecial") || "").trim() === "1";
   const daysParam = (searchParams.get("days") || "").trim();
   const limitParam = (searchParams.get("limit") || "").trim();
   const limit = limitParam ? Number(limitParam) : 50;
@@ -57,6 +58,9 @@ export async function GET(request: Request) {
     if (type && type !== "全部") {
       baseMatch.type = type;
     }
+    if (includeSpecial) {
+      baseMatch.code = { $type: "string", $regex: /^(SH688|SZ300|SZ301)/i };
+    }
 
     const daysList = daysValue ? [daysValue] : Array.from({ length: 10 }, (_, i) => i + 1);
 
@@ -83,6 +87,9 @@ export async function GET(request: Request) {
           { code: /^\s*(SH688|SZ300|SZ301)/i },
           { name: /ST/i },
         ];
+      }
+      if (includeSpecial) {
+        match.code = { $type: "string", $regex: /^(SH688|SZ300|SZ301)/i };
       }
 
       const pipeline = [

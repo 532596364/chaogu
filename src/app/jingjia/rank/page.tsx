@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Checkbox, DatePicker, Modal, Table, Select } from "antd";
+import { Button, Checkbox, DatePicker, Modal, Table, Select, Switch } from "antd";
 import { CopyOutlined, DownloadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
@@ -32,10 +32,13 @@ export default function JingjiaRankPage() {
   const [state, setState] = useState<FetchState>("idle");
   const [message, setMessage] = useState("");
   const [excludeEnabled, setExcludeEnabled] = useState(true);
+  const [includeSpecialEnabled, setIncludeSpecialEnabled] = useState(false);
+  const [exactCountOnly, setExactCountOnly] = useState(false);
   const [queryKey, setQueryKey] = useState(() => ({
     date: getLocalDate(),
     type: "全部",
     exclude: true,
+    includeSpecial: false,
   }));
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailTitle, setDetailTitle] = useState("");
@@ -51,6 +54,15 @@ export default function JingjiaRankPage() {
     ],
     []
   );
+  const displayBuckets = useMemo(() => {
+    if (!exactCountOnly) {
+      return buckets;
+    }
+    return buckets.map((bucket) => ({
+      ...bucket,
+      items: bucket.items.filter((item) => item.count === bucket.days),
+    }));
+  }, [buckets, exactCountOnly]);
 
   useEffect(() => {
     const loadTypes = async () => {
@@ -81,6 +93,12 @@ export default function JingjiaRankPage() {
         }
         if (queryKey.exclude) {
           url.searchParams.set("exclude", "1");
+        }
+        if (queryKey.includeSpecial) {
+          url.searchParams.set("includeSpecial", "1");
+        }
+        if (queryKey.includeSpecial) {
+          url.searchParams.set("includeSpecial", "1");
         }
 
         const response = await fetch(url.toString());
@@ -124,6 +142,9 @@ export default function JingjiaRankPage() {
       if (queryKey.exclude) {
         url.searchParams.set("exclude", "1");
       }
+      if (queryKey.includeSpecial) {
+        url.searchParams.set("includeSpecial", "1");
+      }
 
       const response = await fetch(url.toString());
       const data = await response.json();
@@ -154,6 +175,9 @@ export default function JingjiaRankPage() {
       }
       if (queryKey.exclude) {
         url.searchParams.set("exclude", "1");
+      }
+      if (queryKey.includeSpecial) {
+        url.searchParams.set("includeSpecial", "1");
       }
 
       const response = await fetch(url.toString());
@@ -301,9 +325,25 @@ export default function JingjiaRankPage() {
           >
             排除 SH688、SZ300、SZ301，且名称不含 ST
           </Checkbox>
+          <Checkbox
+            checked={includeSpecialEnabled}
+            onChange={(event) => setIncludeSpecialEnabled(event.target.checked)}
+            className="sm:pb-2"
+          >
+            仅包含 SH688、SZ300、SZ301
+          </Checkbox>
+          <div className="flex items-center gap-2 sm:pb-2">
+            <Switch checked={exactCountOnly} onChange={setExactCountOnly} />
+            <span className="text-sm text-zinc-700">只展示出现 x 次</span>
+          </div>
           <Button
             onClick={() =>
-              setQueryKey({ date, type, exclude: excludeEnabled })
+              setQueryKey({
+                date,
+                type,
+                exclude: excludeEnabled,
+                includeSpecial: includeSpecialEnabled,
+              })
             }
             disabled={!date}
             loading={state === "loading"}
@@ -321,7 +361,7 @@ export default function JingjiaRankPage() {
         ) : null}
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
-          {buckets.map((bucket) => (
+          {displayBuckets.map((bucket) => (
             <div
               key={bucket.days}
               className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"

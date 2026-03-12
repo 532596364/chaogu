@@ -3,6 +3,7 @@ export const DB_NAME_DEFAULT = "chaogu";
 export const COLLECTIONS = {
   JINGJIA: "jingjia",
   YIDONG: "yidong",
+  FIVEDAYS_ITEMS: "fivedaysItems",
 } as const;
 
 export const COLLECTION_OPTIONS = [

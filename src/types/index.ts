@@ -61,10 +61,34 @@ export type TypeTemperature = {
     nums_of_jingjia: number;
     // 当天竞价中，涨停的数量
     nums_of_up_stop: number;
+    // 市场连扳高度
+    stop_height: number;
     // 情绪温度
     emotional_temperature: number;
     // 猜测温度
     guess_temperature: number;
     // 创建日期
     create_date: string;
+}
+
+
+export type TypeFivedaysItems = {
+    // 股票名称
+    name: string;
+    // 股票代码
+    code: string;
+    // 筛选出来的时间
+    filter_date: string;
+    // 隔日正负
+    next_day_sign: string;
+    // 隔三日正负
+    three_days_sign: string;
+    // 隔五日正负
+    five_days_sign: string;
+    // 隔十日正负
+    ten_days_sign: string;
+    // 隔二十日正负
+    twenty_days_sign: string;
+    // 隔四十日正负
+    forty_days_sign: string;
 }

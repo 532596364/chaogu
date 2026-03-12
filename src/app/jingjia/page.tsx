@@ -12,6 +12,7 @@ import {
 } from "antd";
 import type { UploadFile } from "antd";
 import dayjs from "dayjs";
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import {
   COLLECTIONS,
@@ -91,6 +92,17 @@ export default function JingjiaUploadPage() {
                 <Typography.Text strong>{collection}</Typography.Text> 集合。
               </Typography.Text>
             </div>
+            <Space size={8} wrap>
+              <Link href="/jingjia/list">
+                <Button>竞价列表</Button>
+              </Link>
+              <Link href="/jingjia/rank">
+                <Button>抢筹排行</Button>
+              </Link>
+              <Link href="/jingjia/5daysItem">
+                <Button>5daysItem</Button>
+              </Link>
+            </Space>
 
             <form onSubmit={onSubmit}>
               <Space vertical={true} size={16} className="w-full">
